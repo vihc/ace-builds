@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ACE Autocompletion demo</title>
+  <style type="text/css" media="screen">
+    body {
+        overflow: hidden;
+    }
+    
+    #editor { 
+        margin: 0;
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+    }
+  </style>
+</head>
+<body>
+
+<pre id="editor">
+  Feature: Feature
+  Background: hello
+
+  Scenario Outline: A scenario
+    # A comment
+    @tag @tagz
+    Given I have 4 cukes in my "big" and 'Given' Given belly
+      """
+      A doc string with Given
+      """
+    And a table:
+      | with | some |
+      | rows |      |
+</pre>
+<script src="http://code.jquery.com/jquery-2.0.3.min.js"></script>
+<!-- load ace -->
+<script src="../src-noconflict/ace.js"></script>
+<script src="../src-noconflict/mode-coffee.js"></script>
+
+<!-- load ace language tools -->
+<script src="../src-noconflict/ext-language_tools.js"></script>
+
+<script>
+  $( document ).ready(function() {
+    console.log( "ready!" );
+
+    function aceify() { 
+      // trigger extension
+      var langTools = ace.require("ace/ext/language_tools");
+      var editor = ace.edit('editor');
+      editor.setTheme("ace/theme/tomorrow");
+      //var GherkinMode = require('ace/mode/gherkin').Mode;
+      editor.session.setMode("ace/mode/gherkin");
+      //editor.getSession().setMode(new GherkinMode());
+      editor.getSession().setTabSize(2);
+      // enable autocompletion and snippets
+      editor.setOptions({
+          enableBasicAutocompletion: true,
+          enableSnippets: true,
+          enableLiveAutocompletion: false
+      });
+      // uses http://rhymebrain.com/api.html
+      var rhymeCompleter = {
+        getCompletions: function(editor, session, pos, prefix, callback) {
+          if (prefix.length === 0) { callback(null, []); return }
+          $.getJSON("http://rhymebrain.com/talk?function=getRhymes&word=" + prefix,
+            function(wordList) {
+              // wordList like [{"word":"flow","freq":24,"score":300,"flags":"bc","syllables":"1"}]
+              callback(null, wordList.map(function(ea) {
+                return {name: ea.word, value: ea.word, score: ea.score, meta: "rhyme"}
+              }));
+            })
+        }
+      }
+
+      langTools.addCompleter(rhymeCompleter);
+    }
+    aceify();
+  });
+  
+</script>
+
+</body>
+</html>
